@@ -41,8 +41,8 @@ public class CameraWebSocketV2 {
 
     @OnClose
     public void onClose() {
+        users.remove(name);
         webSocketMap.remove(identity);
-
         int curNum = cameraNum.decrementAndGet();
         log.info("camera num: " + curNum);
     }
@@ -99,6 +99,7 @@ public class CameraWebSocketV2 {
                     String toLeaveName = data.getString("name");
                     response.put("type", "leave");
                     if (users.containsKey(toLeaveName)) {
+                        users.remove(toLeaveName);
                         users.get(toLeaveName).session.getBasicRemote().sendText(response.toJSONString());
                     }
                     break;
