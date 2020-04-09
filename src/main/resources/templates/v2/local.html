@@ -163,7 +163,7 @@
                 var configuration = {
                     "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }]
                 };
-                yourConn = new webkitRTCPeerConnection(configuration);
+                yourConn = new RTCPeerConnection(configuration);
                 // setup stream listening
                 yourConn.addStream(stream);
                 //when a remote user adds stream to the peer connection, we display it

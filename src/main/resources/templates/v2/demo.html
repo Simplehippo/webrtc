@@ -63,7 +63,7 @@
     var connectedUser;
 
     //connecting to our signaling server
-    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
+    var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
 
     conn.onopen = function () {
         console.log("Connected to the signaling server");
@@ -152,45 +152,57 @@
             //Starting a peer connection
             //**********************
             //getting local video stream
-            navigator.getUserMedia = ( navigator.getUserMedia ||
+            navigator.getUserMedia = (
+                navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia ||
-                navigator.msGetUserMedia);
-            navigator.getUserMedia({ video: true, audio: true }, function (myStream) {
-                stream = myStream;
-                //displaying local video stream on the page
-                localVideo.srcObject = stream;
-                localVideo.onloadedmetadata = function (e) {
-                    localVideo.play();
-                };
-                //using Google public stun server
-                var configuration = {
-                    "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }]
-                };
-                yourConn = new webkitRTCPeerConnection(configuration);
-                // setup stream listening
-                yourConn.addStream(stream);
-                //when a remote user adds stream to the peer connection, we display it
-                yourConn.onaddstream = function (e) {
-                    remoteVideo.srcObject = e.stream;
-                    remoteVideo.onloadedmetadata = function (e) {
-                        remoteVideo.play();
-                    };
-                };
-                // Setup ice handling
-                yourConn.onicecandidate = function (event) {
-                    if (event.candidate) {
-                        send({
-                            type: "candidate",
-                            candidate: event.candidate
-                        });
-                    }
-                };
-            }, function (error) {
-                console.log(error);
-            });
+                navigator.msGetUserMedia ||
+                navigator.mediaDevices.getUserMedia
+            );
+
+            if (navigator.getUserMedia) {
+                navigator.getUserMedia({ video: true, audio: true }, handleStream, function (error) {
+                    console.log(error);
+                });
+            } else {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: true }, handleStream, function (error) {
+                    console.log(error);
+                });
+            }
         }
     };
+
+    function handleStream(myStream) {
+        stream = myStream;
+        //displaying local video stream on the page
+        localVideo.srcObject = stream;
+        localVideo.onloadedmetadata = function (e) {
+            localVideo.play();
+        };
+        //using Google public stun server
+        var configuration = {
+            "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }]
+        };
+        yourConn = new RTCPeerConnection(configuration);
+        // setup stream listening
+        yourConn.addStream(stream);
+        //when a remote user adds stream to the peer connection, we display it
+        yourConn.onaddstream = function (e) {
+            remoteVideo.srcObject = e.stream;
+            remoteVideo.onloadedmetadata = function (e) {
+                remoteVideo.play();
+            };
+        };
+        // Setup ice handling
+        yourConn.onicecandidate = function (event) {
+            if (event.candidate) {
+                send({
+                    type: "candidate",
+                    candidate: event.candidate
+                });
+            }
+        };
+    }
 
     //initiating a call
     callBtn.addEventListener("click", function () {

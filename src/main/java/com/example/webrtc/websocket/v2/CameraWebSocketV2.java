@@ -41,7 +41,9 @@ public class CameraWebSocketV2 {
 
     @OnClose
     public void onClose() {
-        users.remove(name);
+        if (name != null) {
+            users.remove(name);
+        }
         webSocketMap.remove(identity);
         int curNum = cameraNum.decrementAndGet();
         log.info("camera num: " + curNum);
