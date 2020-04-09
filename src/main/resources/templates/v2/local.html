@@ -63,7 +63,7 @@
     var connectedUser;
 
     //connecting to our signaling server
-    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
+    var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
 
     conn.onopen = function () {
         console.log("Connected to the signaling server");
@@ -152,11 +152,7 @@
             //Starting a peer connection
             //**********************
             //getting local video stream
-            navigator.getUserMedia = ( navigator.getUserMedia ||
-                navigator.webkitGetUserMedia ||
-                navigator.mozGetUserMedia ||
-                navigator.msGetUserMedia);
-            navigator.getUserMedia({ video: true, audio: true }, function (myStream) {
+            navigator.webkitGetUserMedia({ video: true, audio: true }, function (myStream) {
                 stream = myStream;
                 //displaying local video stream on the page
                 localVideo.srcObject = stream;
