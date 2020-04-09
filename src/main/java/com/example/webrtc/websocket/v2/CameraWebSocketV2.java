@@ -33,6 +33,7 @@ public class CameraWebSocketV2 {
     public void onOpen(Session session) {
         this.session = session;
         this.identity = UUID.randomUUID().toString();
+        this.name = identity;
         webSocketMap.put(identity, this);
 
         int curNum = cameraNum.incrementAndGet();
@@ -41,9 +42,7 @@ public class CameraWebSocketV2 {
 
     @OnClose
     public void onClose() {
-        if (name != null) {
-            users.remove(name);
-        }
+        users.remove(name);
         webSocketMap.remove(identity);
         int curNum = cameraNum.decrementAndGet();
         log.info("camera num: " + curNum);
@@ -98,12 +97,7 @@ public class CameraWebSocketV2 {
                     }
                     break;
                 case "leave":
-                    String toLeaveName = data.getString("name");
-                    response.put("type", "leave");
-                    if (users.containsKey(toLeaveName)) {
-                        users.remove(toLeaveName);
-                        users.get(toLeaveName).session.getBasicRemote().sendText(response.toJSONString());
-                    }
+                    users.remove(this.name);
                     break;
                 default:
                     String unknowType = data.getString("type");

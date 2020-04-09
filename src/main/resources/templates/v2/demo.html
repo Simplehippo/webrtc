@@ -175,7 +175,7 @@
         };
         //using Google public stun server
         var configuration = {
-            "iceServers": [{ "url": "stun:stun2.1.google.com:19302" }]
+            "iceServers": [{ "urls": "stun:stun.l.google.com:19302" }]
         };
         yourConn = new RTCPeerConnection(configuration);
         // setup stream listening
@@ -207,7 +207,8 @@
             yourConn.createOffer(function (offer) {
                 send({
                     type: "offer",
-                    offer: offer
+                    offer: offer,
+                    name: connectedUser
                 });
                 yourConn.setLocalDescription(offer);
             }, function (error) {
@@ -225,7 +226,8 @@
             yourConn.setLocalDescription(answer);
             send({
                 type: "answer",
-                answer: answer
+                answer: answer,
+                name: connectedUser
             });
         }, function (error) {
             alert("Error when creating an answer");
