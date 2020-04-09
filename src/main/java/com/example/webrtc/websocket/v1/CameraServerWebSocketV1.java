@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Slf4j
-@ServerEndpoint("/v1/server/camera")
+@ServerEndpoint("/v1/camera/server")
 @Component
 public class CameraServerWebSocketV1 {
 
