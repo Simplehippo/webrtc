@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -23,29 +22,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CameraWebSocketV2 {
 
     private static final AtomicInteger cameraNum = new AtomicInteger(0);
-    private static final ConcurrentMap<String, CameraWebSocketV2> webSocketMap = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, CameraWebSocketV2> users = new ConcurrentHashMap<>();
     private Session session;
-    private String identity;
     private String name;
 
     @OnOpen
     public void onOpen(Session session) {
         this.session = session;
-        this.identity = UUID.randomUUID().toString();
-        this.name = identity;
-        webSocketMap.put(identity, this);
-
-        int curNum = cameraNum.incrementAndGet();
-        log.info("camera num: " + curNum);
+        this.name = UUID.randomUUID().toString();
+        log.info("camera num: " + cameraNum.incrementAndGet());
     }
 
     @OnClose
     public void onClose() {
         users.remove(name);
-        webSocketMap.remove(identity);
-        int curNum = cameraNum.decrementAndGet();
-        log.info("camera num: " + curNum);
+        log.info("camera num: " + cameraNum.decrementAndGet());
     }
 
     @OnMessage
@@ -59,7 +50,7 @@ public class CameraWebSocketV2 {
                     String name = data.getString("name");
                     if (users.containsKey(name)) {
                         response.put("type", "login");
-                        response.put("success", true);
+                        response.put("success", false);
                     } else {
                         this.name = name;
                         users.put(name, this);
@@ -67,7 +58,7 @@ public class CameraWebSocketV2 {
                         response.put("success", true);
                     }
 
-                    session.getBasicRemote().sendText(response.toJSONString());
+                    this.session.getBasicRemote().sendText(response.toJSONString());
                     break;
                 case "offer":
                     String toOfferName = data.getString("name");
@@ -97,7 +88,12 @@ public class CameraWebSocketV2 {
                     }
                     break;
                 case "leave":
-                    users.remove(this.name);
+                    String toLeaveName = data.getString("name");
+                    response.put("type", "leave");
+                    this.session.getBasicRemote().sendText(response.toJSONString());
+                    if (toLeaveName != null && users.containsKey(toLeaveName)) {
+                        users.get(toLeaveName).session.getBasicRemote().sendText(response.toJSONString());
+                    }
                     break;
                 default:
                     String unknowType = data.getString("type");
@@ -112,7 +108,7 @@ public class CameraWebSocketV2 {
 
     @OnError
     public void onError(Session session, Throwable error) {
-        log.error("camera error:" + this.identity + ", Cause: " + error.getMessage());
+        log.error("camera error:" + this.name + ", Cause: " + error.getMessage());
         error.printStackTrace();
     }
 }

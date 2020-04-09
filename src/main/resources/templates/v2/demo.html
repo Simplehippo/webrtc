@@ -63,8 +63,8 @@
     var connectedUser;
 
     //connecting to our signaling server
-    // var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
-    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
+    var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
+    // var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
 
     conn.onopen = function () {
         console.log("Connected to the signaling server");
@@ -157,8 +157,7 @@
                 navigator.getUserMedia ||
                 navigator.webkitGetUserMedia ||
                 navigator.mozGetUserMedia ||
-                navigator.msGetUserMedia ||
-                navigator.mediaDevices.getUserMedia
+                navigator.msGetUserMedia
             );
 
             navigator.getUserMedia({ video: true, audio: true }, handleStream, function (error) {
@@ -174,11 +173,26 @@
         localVideo.onloadedmetadata = function (e) {
             localVideo.play();
         };
+    }
+
+    //initiating a call
+    callBtn.addEventListener("click", function () {
         //using Google public stun server
         var configuration = {
-            "iceServers": [{ "urls": "stun:stun.l.google.com:19302" }]
+            "iceServers": [{
+                'urls': [
+                    'stun:stun.l.google.com:19302',
+                    'stun:stun1.l.google.com:19302',
+                    'stun:stun2.l.google.com:19302',
+                    'stun:stun.l.google.com:19302?transport=udp',
+                ]
+            }]
         };
-        yourConn = new RTCPeerConnection(configuration);
+
+        var PeerConnection = window.RTCPeerConnection ||
+            window.mozRTCPeerConnection ||
+            window.webkitRTCPeerConnection;
+        yourConn = new PeerConnection(configuration);
         // setup stream listening
         yourConn.addStream(stream);
         //when a remote user adds stream to the peer connection, we display it
@@ -197,10 +211,7 @@
                 });
             }
         };
-    }
 
-    //initiating a call
-    callBtn.addEventListener("click", function () {
         var callToUsername = callToUsernameInput.value;
         if (callToUsername.length > 0) {
             connectedUser = callToUsername;
@@ -219,6 +230,41 @@
 
     //when somebody sends us an offer
     function handleOffer(offer, name) {
+        //using Google public stun server
+        var configuration = {
+            "iceServers": [{
+                'urls': [
+                    'stun:stun.l.google.com:19302',
+                    'stun:stun1.l.google.com:19302',
+                    'stun:stun2.l.google.com:19302',
+                    'stun:stun.l.google.com:19302?transport=udp',
+                ]
+            }]
+        };
+
+        var PeerConnection = window.RTCPeerConnection ||
+            window.mozRTCPeerConnection ||
+            window.webkitRTCPeerConnection;
+        yourConn = new PeerConnection(configuration);
+        // setup stream listening
+        yourConn.addStream(stream);
+        //when a remote user adds stream to the peer connection, we display it
+        yourConn.onaddstream = function (e) {
+            remoteVideo.srcObject = e.stream;
+            remoteVideo.onloadedmetadata = function (e) {
+                remoteVideo.play();
+            };
+        };
+        // Setup ice handling
+        yourConn.onicecandidate = function (event) {
+            if (event.candidate) {
+                send({
+                    type: "candidate",
+                    candidate: event.candidate
+                });
+            }
+        };
+
         connectedUser = name;
         yourConn.setRemoteDescription(new RTCSessionDescription(offer));
         //create an answer to an offer
@@ -248,15 +294,14 @@
         send({
             type: "leave"
         });
-        handleLeave();
     });
 
     function handleLeave() {
         connectedUser = null;
         remoteVideo.src = null;
-        yourConn.close();
         yourConn.onicecandidate = null;
         yourConn.onaddstream = null;
+        yourConn.close();
     };
 </script>
 </body>
