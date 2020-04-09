@@ -63,6 +63,7 @@
     var connectedUser;
 
     //connecting to our signaling server
+    // var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
     var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
 
     conn.onopen = function () {
@@ -207,8 +208,7 @@
             yourConn.createOffer(function (offer) {
                 send({
                     type: "offer",
-                    offer: offer,
-                    name: connectedUser
+                    offer: offer
                 });
                 yourConn.setLocalDescription(offer);
             }, function (error) {
@@ -227,7 +227,6 @@
             send({
                 type: "answer",
                 answer: answer,
-                name: connectedUser
             });
         }, function (error) {
             alert("Error when creating an answer");
@@ -246,7 +245,6 @@
 
     //hang up
     hangUpBtn.addEventListener("click", function () {
-
         send({
             type: "leave"
         });
