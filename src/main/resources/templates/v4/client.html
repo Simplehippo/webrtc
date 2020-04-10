@@ -1,0 +1,244 @@
+<html>
+<head>
+    <title>WebRTC Video Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css">
+</head>
+<style>
+    body {
+        background: #eee;
+        padding: 5% 0;
+    }
+    video {
+        background: black;
+        border: 1px solid gray;
+    }
+    .call-page {
+        position: relative;
+        display: block;
+        margin: 0 auto;
+        width: 500px;
+        height: 500px;
+    }
+    #localVideo {
+        width: 150px;
+        height: 150px;
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+    #remoteVideo {
+        width: 500px;
+        height: 500px;
+    }
+</style>
+<body>
+<div id = "loginPage" class = "container text-center">
+    <div class = "row">
+        <div class = "col-md-4 col-md-offset-4">
+            <h2>WebRTC Video Demo. Please sign in</h2>
+            <label for = "usernameInput" class = "sr-only">Login</label>
+            <input type = "email" id = "usernameInput" c
+                   lass = "form-control formgroup" placeholder = "Login"
+                   required = "" autofocus = "">
+            <button id = "loginBtn" class = "btn btn-lg btn-primary btnblock">
+                Sign in</button>
+        </div>
+    </div>
+</div>
+<div id = "callPage" class = "call-page">
+    <video id = "localVideo" autoplay></video>
+    <video id = "remoteVideo" autoplay></video>
+    <div class = "row text-center">
+        <div class = "col-md-12">
+            <input id = "callToUsernameInput" type = "text"
+                   placeholder = "username to call" />
+            <button id = "callBtn" class = "btn-success btn">Call</button>
+            <button id = "hangUpBtn" class = "btn-danger btn">Hang Up</button>
+        </div>
+    </div>
+</div>
+<script>
+    //our username
+    var name;
+
+    //connecting to our signaling server
+    // var conn = new WebSocket('ws://localhost:9999/webrtc/v4/monitor');
+    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v4/monitor');
+
+    conn.onopen = function () {
+        console.log("Connected to the signaling server");
+    };
+
+    //when we got a message from a signaling server
+    conn.onmessage = function (msg) {
+        console.log("Got message", msg.data);
+        var data = JSON.parse(msg.data);
+        switch(data.type) {
+            case "login":
+                handleLogin(data.success);
+                break;
+            //when somebody wants to call us
+            case "connect":
+                handleConnect(data.name);
+                break;
+            case "answer":
+                handleAnswer(data.answer, data.name);
+                break;
+            //when a remote peer sends an ice candidate to us
+            case "candidate":
+                handleCandidate(data.candidate, data.name);
+                break;
+            case "leave":
+                handleLeave(data.name);
+                break;
+            default:
+                break;
+        }
+    };
+
+    conn.onerror = function (err) {
+        console.log("Got error", err);
+    };
+
+    //alias for sending JSON encoded messages
+    function send(message) {
+        //attach the other peer username to our messages
+        conn.send(JSON.stringify(message));
+    };
+
+    //******
+    //UI selectors block
+    //******
+
+    var loginPage = document.querySelector('#loginPage');
+    var usernameInput = document.querySelector('#usernameInput');
+    var loginBtn = document.querySelector('#loginBtn');
+
+    var callPage = document.querySelector('#callPage');
+    var hangUpBtn = document.querySelector('#hangUpBtn');
+    var localVideo = document.querySelector('#localVideo');
+
+    var stream;
+    var connections = {};
+
+    callPage.style.display = "none";
+
+    // Login when the user clicks the button
+    loginBtn.addEventListener("click", function (event) {
+        name = usernameInput.value;
+        if (name.length > 0) {
+            send({
+                type: "login",
+                name: name
+            });
+        }
+    });
+
+    function handleLogin(success) {
+        if (success === false) {
+            alert("Ooops...try a different username");
+        } else {
+            loginPage.style.display = "none";
+            callPage.style.display = "block";
+            //**********************
+            //Starting a peer connection
+            //**********************
+            //getting local video stream
+            navigator.getUserMedia = (
+                navigator.getUserMedia ||
+                navigator.webkitGetUserMedia ||
+                navigator.mozGetUserMedia ||
+                navigator.msGetUserMedia
+            );
+
+            navigator.getUserMedia({ video: true, audio: true }, function (localStream) {
+                stream = localStream;
+                //displaying local video stream on the page
+                localVideo.srcObject = stream;
+                localVideo.onloadedmetadata = function (e) {
+                    localVideo.play();
+                };
+
+                send({
+                    type: "broadcast"
+                });
+            }, function (error) {
+                console.log(error);
+            });
+        }
+    };
+
+    function handleConnect(serverName) {
+        //using Google public stun server
+        var configuration = {
+            "iceServers": [{
+                'urls': [
+                    'stun:stun.l.google.com:19302',
+                    'stun:stun1.l.google.com:19302',
+                    'stun:stun2.l.google.com:19302',
+                    'stun:stun.l.google.com:19302?transport=udp',
+                ]
+            }]
+        };
+
+        var PeerConnection = window.RTCPeerConnection ||
+            window.mozRTCPeerConnection ||
+            window.webkitRTCPeerConnection;
+        var newConn = new PeerConnection(configuration);
+        // setup stream listening
+        newConn.addStream(stream);
+        // Setup ice handling
+        newConn.onicecandidate = function (event) {
+            if (event.candidate) {
+                send({
+                    type: "candidate",
+                    candidate: event.candidate,
+                    name: serverName
+                });
+            }
+        };
+
+        if (serverName.length > 0) {
+            // create an offer
+            newConn.createOffer(function (offer) {
+                send({
+                    type: "offer",
+                    offer: offer,
+                    name: serverName
+                });
+                newConn.setLocalDescription(offer);
+            }, function (error) {
+                alert("Error when creating an offer");
+            });
+        }
+
+        connections[serverName] = newConn;
+    }
+
+    //when we got an answer from a remote user
+    function handleAnswer(answer, serverName) {
+        connections[serverName].setRemoteDescription(new RTCSessionDescription(answer));
+    }
+
+    //when we got an ice candidate from a remote user
+    function handleCandidate(candidate, serverName) {
+        connections[serverName].addIceCandidate(new RTCIceCandidate(candidate));
+    }
+
+    //hang up
+    hangUpBtn.addEventListener("click", function () {
+        send({
+            type: "leave"
+        });
+    });
+
+    function handleLeave(serverName) {
+        var conn = connections[serverName];
+        conn.onicecandidate = null;
+        conn.onaddstream = null;
+        conn.close();
+        delete connections[serverName];
+    };
+</script>
+</body>
+</html>
