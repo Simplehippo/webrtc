@@ -160,7 +160,11 @@
                 navigator.msGetUserMedia
             );
 
-            navigator.getUserMedia({ video: true, audio: false }, handleStream, function (error) {
+            navigator.getUserMedia({ video: true, audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            } }, handleStream, function (error) {
                 console.log(error);
             });
         }
