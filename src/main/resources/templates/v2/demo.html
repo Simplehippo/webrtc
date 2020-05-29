@@ -63,7 +63,7 @@
     var connectedUser;
 
     //connecting to our signaling server
-    var conn = new WebSocket('ws://localhost:9999/webrtc/v2/camera');
+    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
     // var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v2/camera');
 
     conn.onopen = function () {
@@ -160,7 +160,7 @@
                 navigator.msGetUserMedia
             );
 
-            navigator.getUserMedia({ video: true, audio: true }, handleStream, function (error) {
+            navigator.getUserMedia({ video: true, audio: false }, handleStream, function (error) {
                 console.log(error);
             });
         }

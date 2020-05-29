@@ -62,8 +62,8 @@
     var name;
 
     //connecting to our signaling server
-    // var conn = new WebSocket('ws://localhost:9999/webrtc/v4/monitor');
-    var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v4/monitor');
+    var conn = new WebSocket('ws://localhost:9999/webrtc/v4/monitor');
+    // var conn = new WebSocket('ws://106.14.14.138:9999/webrtc/v4/monitor');
 
     conn.onopen = function () {
         console.log("Connected to the signaling server");
@@ -151,7 +151,7 @@
                 navigator.msGetUserMedia
             );
 
-            navigator.getUserMedia({ video: true, audio: true }, function (localStream) {
+            navigator.getUserMedia({ video: true, audio: false }, function (localStream) {
                 stream = localStream;
                 //displaying local video stream on the page
                 localVideo.srcObject = stream;

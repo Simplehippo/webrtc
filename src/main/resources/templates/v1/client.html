@@ -58,7 +58,7 @@
                 canvas.getContext('2d').drawImage(video, 0, 0, 400, 400);
                 let message = JSON.stringify({"message": canvas.toDataURL("image/png")});
                 socket.send(message);
-            }, 100)
+            }, 200)
         }
     }).catch(function (err) {
         console.log(err.name + ": " + err.message);
