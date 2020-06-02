@@ -132,6 +132,24 @@
 
     callPage.style.display = "none";
 
+    var configuration = {
+        "iceServers": [{
+            'urls': [
+                'stun:yangyucai.cloud:3478',
+                'stun:stun.xten.com:3478',
+                'stun:stun.voipbuster.com:3478',
+                'stun:stun.ideasip.com:3478',
+                'stun:stun.ekiga.net:3478',
+                'stun:stun.schlund.de:3478',
+            ]
+        },
+            {
+                "urls": "turn:yangyucai.cloud:3478",
+                "username": "user",//可选
+                "credential": "123456"//可选
+            }]
+    };
+
     // Login when the user clicks the button
     loginBtn.addEventListener("click", function (event) {
         name = usernameInput.value;
@@ -177,25 +195,6 @@
 
     //initiating a call
     callBtn.addEventListener("click", function () {
-        //using Google public stun server
-        var configuration = {
-            "iceServers": [{
-                'urls': [
-                    'stun:yangyucai.cloud:3478',
-                    'stun:stun.xten.com:3478',
-                    'stun:stun.voipbuster.com:3478',
-                    'stun:stun.ideasip.com:3478',
-                    'stun:stun.ekiga.net:3478',
-                    'stun:stun.schlund.de:3478',
-                ]
-            },
-            {
-                "urls": "turn:yangyucai.cloud:3478",
-                "username": "user",//可选
-                "credential": "123456"//可选
-            }]
-        };
-
         var PeerConnection = window.RTCPeerConnection ||
             window.mozRTCPeerConnection ||
             window.webkitRTCPeerConnection;
@@ -237,18 +236,6 @@
 
     //when somebody sends us an offer
     function handleOffer(offer, name) {
-        //using Google public stun server
-        var configuration = {
-            "iceServers": [{
-                'urls': [
-                    'stun:stun.l.google.com:19302',
-                    'stun:stun1.l.google.com:19302',
-                    'stun:stun2.l.google.com:19302',
-                    'stun:stun.l.google.com:19302?transport=udp',
-                ]
-            }]
-        };
-
         var PeerConnection = window.RTCPeerConnection ||
             window.mozRTCPeerConnection ||
             window.webkitRTCPeerConnection;
